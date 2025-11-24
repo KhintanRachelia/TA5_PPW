@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Interactive Calculator</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: radial-gradient(circle at top, #ffeaf3 0, #ffc5dd 30%, #ffadcf 60%, #ff88bc 100%);
+}
+
+.calculator-wrapper {
+  width: 100%;
+  max-width: 430px;
+  padding: 16px;
+}
+
+.calculator {
+  background: rgba(255, 255, 255, 0.97);
+  border-radius: 28px;
+  padding: 20px 18px 14px;
+  box-shadow:
+    0 18px 40px rgba(255, 120, 170, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.9);
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(14px);
+}
+
+.calculator::before {
+  content: "♥";
+  position: absolute;
+  font-size: 120px;
+  color: rgba(255, 196, 210, 0.4);
+  top: -45px;
+  right: -8px;
+  pointer-events: none;
+}
+
+.calculator::after {
+  content: "♡";
+  position: absolute;
+  font-size: 80px;
+  color: rgba(255, 210, 223, 0.6);
+  bottom: -30px;
+  left: -10px;
+  pointer-events: none;
+}
+
+.calc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: #c2185b;
+}
+
+.title-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #fff4fa, #ff5d9e);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.1rem;
+  box-shadow: 0 4px 10px rgba(255, 64, 129, 0.35);
+}
+
+.memory-indicator {
+  font-size: 0.75rem;
+  color: #bf165e;
+  background: #ffe6f4;
+  padding: 4px 10px;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(255, 140, 190, 0.35);
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.memory-indicator.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.display {
+  background: linear-gradient(135deg, #ffeef7, #ffe4f2);
+  border-radius: 20px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 72px;
+  box-shadow:
+    inset 0 3px 6px rgba(255, 255, 255, 0.95),
+    inset 0 -4px 8px rgba(255, 170, 204, 0.6);
+}
+
+.display-secondary {
+  font-size: 0.85rem;
+  color: #b1648d;
+  min-height: 18px;
+  text-align: right;
+}
+
+.display-main {
+  font-size: 1.7rem;
+  font-weight: 700;
+  text-align: right;
+  color: #b0005b;
+  transition: font-size 0.12s ease;
+}
+
+.result-indeterminate {
+  color: #ff7eb3 !important;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  font-size: 1.4rem !important;
+}
+
+.result-undefined {
+  color: #ff4f7b !important;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  font-size: 1.4rem !important;
+}
+
+.button-rows {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 9px;
+  margin-bottom: 10px;
+}
+
+button.btn {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 0;
+  font-size: 1rem;
+  cursor: pointer;
+  background: radial-gradient(circle at 30% 20%, #fff7fc, #ffd3ea);
+  color: #c2185b;
+  font-weight: 500;
+  box-shadow:
+    0 6px 10px rgba(255, 130, 190, 0.28),
+    0 0 0 1px rgba(255, 255, 255, 0.9);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+}
+
+.btn-operator {
+  background: linear-gradient(145deg, #ffe1f0, #ffc0dc) !important;
+  color: #a50a53 !important;
+}
+
+.btn-operator.active {
+  background: linear-gradient(145deg, #ff9dc7, #ff5d91) !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 12px 22px rgba(255, 110, 160, 0.28);
+}
+
+button.btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at 25% 0%, rgba(255, 255, 255, 0.9), transparent 55%);
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+button.btn:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 10px 16px rgba(255, 130, 190, 0.38),
+    0 0 0 1px rgba(255, 255, 255, 0.98);
+  filter: brightness(1.04);
+}
+
+button.btn:active {
+  transform: translateY(1px) scale(0.97);
+  box-shadow:
+    0 4px 8px rgba(255, 130, 190, 0.25),
+    0 0 0 1px rgba(255, 255, 255, 0.9);
+  filter: brightness(0.99);
+}
+
+.btn-wide {
+  grid-column: span 2;
+}
+
+@keyframes heartGlow {
+  0% {
+    box-shadow:
+      0 6px 10px rgba(255, 130, 190, 0.28),
+      0 0 0 1px rgba(255, 255, 255, 0.9),
+      0 0 0 rgba(255, 105, 180, 0);
+  }
+  40% {
+    box-shadow:
+      0 8px 16px rgba(255, 130, 190, 0.38),
+      0 0 0 1px rgba(255, 255, 255, 1),
+      0 0 18px rgba(255, 120, 190, 0.9);
+  }
+  100% {
+    box-shadow:
+      0 6px 10px rgba(255, 130, 190, 0.28),
+      0 0 0 1px rgba(255, 255, 255, 0.9),
+      0 0 0 rgba(255, 105, 180, 0);
+  }
+}
+
+.btn-glow {
+  animation: heartGlow 0.35s ease-out;
+}
+
+.heart-particle {
+  position: absolute;
+  font-size: 0.95rem;
+  color: rgba(255, 64, 129, 0.9);
+  pointer-events: none;
+  animation: floatHeart 550ms ease-out forwards;
+}
+
+@keyframes floatHeart {
+  0%   { transform: translate(-50%, -10%) scale(0.4); opacity: 0.9; }
+  50%  { transform: translate(-50%, -26%) scale(0.9); opacity: 1; }
+  100% { transform: translate(-50%, -45%) scale(0.7); opacity: 0; }
+}
+
+.history {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #ffd5ec;
+}
+
+.history-title {
+  font-size: 0.8rem;
+  color: #b35a84;
+  margin-bottom: 3px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.history-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.history-list li {
+  padding: 2px 0;
+  display: flex;
+  justify-content: space-between;
+}
+
+.history-expression { color: #7a375b; }
+.history-result     { color: #c0005f; font-weight: 600; }
+
+@media (max-width: 480px) {
+  .display-main { font-size: 1.7rem; }
+  button.btn    { padding: 9px 0; font-size: 0.95rem; }
+}
+
+.btn-number {
+  background: linear-gradient(145deg, #fff3f9, #ffe1f1) !important;
+  color: #b31561 !important;
+}
+
+.btn-memory {
+  background: linear-gradient(145deg, #f6f0ff, #e9ddff) !important;
+  color: #7057a0 !important;
+}
+
+.btn-equals {
+  background: linear-gradient(145deg, #ff9dc7, #ff6fb0) !important;
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+.btn-function {
+  background: linear-gradient(145deg, #fff5fa, #ffe6f1) !important;
+  color: #a6336e !important;
+}
+
+.btn-delete {
+  background: linear-gradient(145deg, #ffe9f1, #ffd6df) !important;
+  color: #b45a68 !important;
+}
+</style>
+</head>
+
+<body>
+
+<div class="calculator-wrapper">
+  <div class="calculator">
+    <div class="calc-header">
+      <div class="title">
+        <div class="title-icon">♥</div>
+        <span>Interactive Calculator</span>
+      </div>
+      <div id="memoryIndicator" class="memory-indicator">
+        <span class="heart">♡</span><span>M</span>
+      </div>
+    </div>
+
+    <div class="display">
+      <div id="secondaryDisplay" class="display-secondary"></div>
+      <div id="mainDisplay" class="display-main">0</div>
+    </div>
+
+    <div class="button-rows">
+
+      <button class="btn btn-memory" data-action="mc">MC</button>
+      <button class="btn btn-memory" data-action="mr">MR</button>
+      <button class="btn btn-memory" data-action="mplus">M+</button>
+      <button class="btn btn-memory" data-action="mminus">M-</button>
+
+      <button class="btn btn-function" data-action="c">C</button>
+      <button class="btn btn-function" data-action="ce">CE</button>
+      <button class="btn btn-operator" data-operator="÷">÷</button>
+      <button class="btn btn-operator" data-operator="×">×</button>
+
+      <button class="btn btn-number" data-number="7">7</button>
+      <button class="btn btn-number" data-number="8">8</button>
+      <button class="btn btn-number" data-number="9">9</button>
+      <button class="btn btn-operator" data-operator="-">−</button>
+
+      <button class="btn btn-number" data-number="4">4</button>
+      <button class="btn btn-number" data-number="5">5</button>
+      <button class="btn btn-number" data-number="6">6</button>
+      <button class="btn btn-operator" data-operator="+">+</button>
+
+      <button class="btn btn-number" data-number="1">1</button>
+      <button class="btn btn-number" data-number="2">2</button>
+      <button class="btn btn-number" data-number="3">3</button>
+      <button class="btn btn-equals" data-action="equals">=</button>
+
+      <button class="btn btn-number btn-wide" data-number="0">0</button>
+      <button class="btn btn-number" data-decimal=".">.</button>
+      <button class="btn btn-delete" data-action="ce">⌫</button>
+
+    </div>
+
+    <div class="history">
+      <div class="history-title">
+        <span>History (Last 5)</span>
+        <span class="icon">💕</span>
+      </div>
+      <ul id="historyList" class="history-list"></ul>
+      <p id="historyEmpty" style="font-size:0.8rem; color:#b989a8; text-align:center; margin-top:4px;">
+        No calculations yet
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function () {
+
+  const mainDisplay      = document.getElementById("mainDisplay");
+  const secondaryDisplay = document.getElementById("secondaryDisplay");
+  const historyList      = document.getElementById("historyList");
+  const memoryIndicator  = document.getElementById("memoryIndicator");
+  const buttonContainer  = document.querySelector(".button-rows");
+
+  let currentInput    = "";
+  let tokens          = []; 
+  let justCalculated  = false;
+  let history         = [];
+  let memoryValue     = 0;
+  let hasMemory       = false;
+  let lastExpression  = "";
+
+  let activeOperatorBtn = null;
+  let audioCtx = null;
+
+  function isOperator(t) {
+    return t === "+" || t === "−" || t === "×" || t === "÷";
+  }
+
+  function playPopSound() {
+    try {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      const duration = 0.09;
+      const osc  = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const now  = audioCtx.currentTime;
+
+      osc.frequency.setValueAtTime(420, now);
+      osc.frequency.exponentialRampToValueAtTime(260, now + duration);
+
+      gain.gain.setValueAtTime(0.4, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+      osc.type = "sine";
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + duration);
+    } catch (e) {}
+  }
+
+  function animateButton(btn) {
+    if (!btn) return;
+    btn.classList.remove("btn-glow");
+    void btn.offsetWidth;
+    btn.classList.add("btn-glow");
+
+    const rect = btn.getBoundingClientRect();
+    const particle = document.createElement("span");
+    particle.className = "heart-particle";
+    particle.textContent = "♥";
+    particle.style.left = rect.width / 2 + "px";
+    particle.style.top  = rect.height * 0.15 + "px";
+    btn.appendChild(particle);
+    setTimeout(() => particle.remove(), 600);
+  }
+
+  function formatNumber(value) {
+    if (typeof value === "string") return value;
+    if (!isFinite(value)) return "Error";
+    const str = value.toString();
+    if (str.length > 14 && !str.includes("e")) {
+      return Number(value).toExponential(6);
+    }
+    return str;
+  }
+
+  function clearResultClasses() {
+    mainDisplay.classList.remove("result-indeterminate", "result-undefined");
+  }
+
+  function buildExpressionString() {
+    const allTokens = tokens.slice();
+    if (currentInput !== "") {
+      allTokens.push(currentInput);
+    }
+    return allTokens.join("");
+  }
+
+  function updateDisplay() {
+    if (mainDisplay.classList.contains("result-indeterminate") ||
+        mainDisplay.classList.contains("result-undefined")) {
+      secondaryDisplay.textContent = lastExpression || buildExpressionString() || "";
+      return;
+    }
+
+    let mainText;
+    if (currentInput !== "") {
+      mainText = currentInput;
+    } else if (tokens.length > 0) {
+      let lastNum = "0";
+      for (let i = tokens.length - 1; i >= 0; i--) {
+        if (!isOperator(tokens[i])) {
+          lastNum = tokens[i];
+          break;
+        }
+      }
+      mainText = lastNum;
+    } else {
+      mainText = "0";
+    }
+
+    clearResultClasses();
+    mainDisplay.textContent = mainText;
+
+    const exprStr = buildExpressionString();
+    if (exprStr) {
+      secondaryDisplay.textContent = exprStr;
+    } else {
+      secondaryDisplay.textContent = lastExpression || "";
+    }
+  }
+
+  function setActiveOperatorButton(op) {
+    if (activeOperatorBtn) activeOperatorBtn.classList.remove('active');
+    activeOperatorBtn = buttonContainer.querySelector(`[data-operator="${op}"]`);
+    if (activeOperatorBtn) activeOperatorBtn.classList.add('active');
+  }
+
+  function clearActiveOperatorButton() {
+    if (activeOperatorBtn) activeOperatorBtn.classList.remove('active');
+    activeOperatorBtn = null;
+  }
+
+  function appendNumber(digit) {
+    if (justCalculated) {
+      tokens = [];
+      lastExpression = "";
+      justCalculated = false;
+      currentInput = "";
+    }
+
+    if (mainDisplay.classList.contains("result-indeterminate") ||
+        mainDisplay.classList.contains("result-undefined")) {
+      clearResultClasses();
+      tokens = [];
+      currentInput = "";
+      lastExpression = "";
+      justCalculated = false;
+    }
+
+    if (digit === "0" && currentInput === "0") return;
+
+    if (currentInput === "0" && digit !== ".") {
+      currentInput = digit;
+    } else {
+      currentInput += digit;
+    }
+
+    updateDisplay();
+  }
+
+  function addDecimal() {
+    if (justCalculated) {
+      tokens = [];
+      currentInput = "0";
+      lastExpression = "";
+      justCalculated = false;
+    }
+    if (!currentInput.includes('.')) {
+      currentInput = currentInput === "" ? "0." : currentInput + ".";
+      updateDisplay();
+    }
+  }
+
+  function clearAll() {
+    currentInput    = "";
+    tokens          = [];
+    justCalculated  = false;
+    lastExpression  = "";
+
+    clearResultClasses();
+    clearActiveOperatorButton();
+    updateDisplay();
+  }
+
+  function clearEntry() {
+    currentInput   = "";
+    justCalculated = false;
+    clearResultClasses();
+    updateDisplay();
+  }
+
+  function evaluateTokens(tok) {
+    if (tok.length === 0) return 0;
+    let values = [];
+    let i = 0;
+    let current = parseFloat(tok[i]);
+    if (isNaN(current)) current = 0;
+    i++;
+
+    while (i < tok.length) {
+      const op = tok[i];
+      const nextVal = parseFloat(tok[i + 1]);
+      if (op === "×" || op === "÷") {
+        if (op === "÷") {
+          if (nextVal === 0) {
+            if (current === 0) return "Indeterminate";
+            return "Undefined";
+          }
+          current = current / nextVal;
+        } else {
+          current = current * nextVal;
+        }
+      } else if (op === "+" || op === "−") {
+        values.push(current);
+        values.push(op);
+        current = nextVal;
+      }
+      i += 2;
+    }
+    values.push(current);
+    let result = values[0];
+    for (let j = 1; j < values.length; j += 2) {
+      const op = values[j];
+      const b  = values[j + 1];
+      if (op === "+") result += b;
+      else if (op === "−") result -= b;
+    }
+    return result;
+  }
+
+  function applyOperator(op) {
+    clearResultClasses();
+
+    if (mainDisplay.classList.contains("result-indeterminate") ||
+        mainDisplay.classList.contains("result-undefined")) {
+      return;
+    }
+
+    if (justCalculated) {
+      const valText = mainDisplay.textContent;
+      const num = parseFloat(valText);
+      tokens = [];
+      if (!isNaN(num)) {
+        tokens.push(valText);
+      }
+      justCalculated = false;
+      currentInput = "";
+    }
+
+    if (currentInput !== "") {
+      tokens.push(currentInput);
+      currentInput = "";
+    } else if (tokens.length === 0) {
+      return;
+    }
+
+    const lastTok = tokens[tokens.length - 1];
+    if (isOperator(lastTok)) {
+      tokens[tokens.length - 1] = op;
+    } else {
+      tokens.push(op);
+    }
+
+    setActiveOperatorButton(op);
+    updateDisplay();
+  }
+
+  function equals() {
+    clearActiveOperatorButton();
+
+    if (mainDisplay.classList.contains("result-indeterminate") ||
+        mainDisplay.classList.contains("result-undefined")) {
+      return;
+    }
+
+    if (currentInput !== "") {
+      tokens.push(currentInput);
+      currentInput = "";
+    }
+
+    if (tokens.length === 0) return;
+    if (isOperator(tokens[tokens.length - 1])) {
+      tokens.pop();
+      if (tokens.length === 0) {
+        updateDisplay();
+        return;
+      }
+    }
+
+    const exprPretty = tokens.join("");
+
+    const result = evaluateTokens(tokens);
+
+    if (typeof result === "string") {
+      lastExpression = exprPretty;
+      history.unshift({ expression: lastExpression, result });
+      if (history.length > 5) history.pop();
+      renderHistory();
+
+      mainDisplay.textContent = result;
+      if (result === "Indeterminate") {
+        mainDisplay.classList.add("result-indeterminate");
+        mainDisplay.classList.remove("result-undefined");
+      } else {
+        mainDisplay.classList.add("result-undefined");
+        mainDisplay.classList.remove("result-indeterminate");
+      }
+      secondaryDisplay.textContent = lastExpression;
+
+      tokens = [];
+      currentInput = "";
+      justCalculated = true;
+      return;
+    }
+
+    const isError = !isFinite(result);
+    const resultFormatted = isError ? "Error" : formatNumber(result);
+
+    lastExpression = exprPretty;
+    history.unshift({ expression: lastExpression, result: resultFormatted });
+    if (history.length > 5) history.pop();
+    renderHistory();
+
+    if (isError) {
+      mainDisplay.textContent      = "Error (÷ 0)";
+      secondaryDisplay.textContent = lastExpression;
+      tokens = [];
+      currentInput = "";
+      justCalculated = true;
+      return;
+    }
+
+    clearResultClasses();
+    mainDisplay.textContent = resultFormatted;
+    secondaryDisplay.textContent = lastExpression;
+
+    tokens = [];
+    currentInput = result.toString();
+    justCalculated = true;
+  }
+
+  function renderHistory() {
+    historyList.innerHTML = "";
+    const emptyText = document.getElementById("historyEmpty");
+    if (history.length === 0) {
+      emptyText.style.display = "block";
+      return;
+    } else {
+      emptyText.style.display = "none";
+    }
+
+    history.forEach((item) => {
+      const li = document.createElement("li");
+      li.innerHTML = `
+        <span class="history-expression">${item.expression} =</span>
+        <span class="history-result">${item.result}</span>`;
+      historyList.appendChild(li);
+    });
+  }
+
+  function getDisplayNumber() {
+    const txt = mainDisplay.textContent || "";
+    if (txt.startsWith("Error") || txt === "Indeterminate" || txt === "Undefined") return null;
+    const num = parseFloat(txt);
+    return isNaN(num) ? null : num;
+  }
+
+  function updateMemoryIndicator() {
+    memoryIndicator.classList.toggle("active", hasMemory && memoryValue !== 0);
+  }
+
+  function memoryAdd() {
+    const val = getDisplayNumber();
+    if (val !== null) {
+      memoryValue += val;
+      hasMemory = true;
+      updateMemoryIndicator();
+    }
+  }
+
+  function memorySubtract() {
+    const val = getDisplayNumber();
+    if (val !== null) {
+      memoryValue -= val;
+      hasMemory = true;
+      updateMemoryIndicator();
+    }
+  }
+
+  function memoryRecall() {
+    if (!hasMemory) return;
+    clearResultClasses();
+    currentInput   = formatNumber(memoryValue);
+    justCalculated = false;
+    lastExpression = "";
+    tokens         = [];
+    clearActiveOperatorButton();
+    updateDisplay();
+  }
+
+  function memoryClear() {
+    memoryValue = 0;
+    hasMemory   = false;
+    updateMemoryIndicator();
+  }
+
+  function handleButtonClick(e) {
+    const target = e.target.closest("button");
+    if (!target) return;
+
+    const { number, decimal, operator, action } = target.dataset;
+
+    if (number   !== undefined) appendNumber(number);
+    else if (decimal  !== undefined) addDecimal();
+    else if (operator !== undefined) applyOperator(operator);
+    else if (action === "c")  clearAll();
+    else if (action === "ce") clearEntry();
+    else if (action === "equals") equals();
+    else if (action === "mplus")  memoryAdd();
+    else if (action === "mminus") memorySubtract();
+    else if (action === "mr")     memoryRecall();
+    else if (action === "mc")     memoryClear();
+
+    playPopSound();
+    animateButton(target);
+  }
+
+  function findButtonByKey(key) {
+    if (key >= "0" && key <= "9") return buttonContainer.querySelector(`[data-number="${key}"]`);
+    if (key === ".")  return buttonContainer.querySelector('[data-decimal="."]');
+    if (key === "+")  return buttonContainer.querySelector('[data-operator="+"]');
+    if (key === "-")  return buttonContainer.querySelector('[data-operator="-"]');
+    if (key === "*" || key === "x" || key === "X")
+      return buttonContainer.querySelector('[data-operator="×"]');
+    if (key === "/")  return buttonContainer.querySelector('[data-operator="÷"]');
+    if (key === "Enter" || key === "=")
+      return buttonContainer.querySelector('[data-action="equals"]');
+    if (key === "Escape")
+      return buttonContainer.querySelector('[data-action="c"]');
+    if (key === "Backspace" || key === "Delete")
+      return buttonContainer.querySelector('[data-action="ce"]');
+    return null;
+  }
+
+  function handleKeydown(e) {
+    const key = e.key;
+    let handled = false;
+
+    if (key >= "0" && key <= "9") { appendNumber(key); handled = true; }
+    else if (key === "." || key === ",") { addDecimal(); handled = true; }
+    else if (key === "+") { applyOperator("+"); handled = true; }
+    else if (key === "-") { applyOperator("−"); handled = true; }
+    else if (key === "*" || key === "x" || key === "X") { applyOperator("×"); handled = true; }
+    else if (key === "/") { applyOperator("÷"); handled = true; }
+    else if (key === "Enter" || key === "=") { equals(); handled = true; }
+    else if (key === "Escape") { clearAll(); handled = true; }
+    else if (key === "Backspace" || key === "Delete") { clearEntry(); handled = true; }
+
+    if (handled) {
+      const btn = findButtonByKey(key);
+      if (btn) {
+        playPopSound();
+        animateButton(btn);
+      }
+      e.preventDefault();
+    }
+  }
+  buttonContainer.addEventListener("click", handleButtonClick);
+  document.addEventListener("keydown", handleKeydown);
+
+  updateDisplay();
+  updateMemoryIndicator();
+
+})();
+</script>
+
+</body>
+</html>
